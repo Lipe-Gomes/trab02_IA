@@ -1,0 +1,19 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build LaTeX (pdfLaTeX)",
+      "type": "shell",
+      "command": "pdflatex",
+      "args": ["-shell-escape", "-interaction=nonstopmode", "main.tex"],
+      "group": "build"
+    },
+    {
+      "label": "Build LaTeX with bibliography",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-lc", "pdflatex -shell-escape -interaction=nonstopmode main.tex && bibtex main && pdflatex -shell-escape -interaction=nonstopmode main.tex && pdflatex -shell-escape -interaction=nonstopmode main.tex"],
+      "group": "build"
+    }
+  ]
+}

@@ -333,4 +333,46 @@ Destaca-se que a LLM utilizada para a exploração do problema foi o Gemini, na 
     Interatividade: Permita que o usuário da feira mova um slider simulando o seu próprio batimento cardíaco noturno e veja, em tempo real, como os três algoritmos divergem ou concordam no diagnóstico. Isso materializa o impacto da Inteligência Artificial em soluções de saúde e valida a excelência do trabalho perante os avaliadores.
 
     Com esse roteiro estruturado, por onde a equipe prefere iniciar a execução: gostariam de discutir o código base em Python para fazer o filtro de repouso na base de dados, ou preferem debater como baixar e formatar os dados do CovIdentify ou Welltory?
+
+    \item[Aluno:] Agora quanto aos dados, considerando que temos dados de 20 pacientes ao longo de um período, como dividir em quantidade dados que servirão para validação e quantos servirão para treinamento?
+
+    \item[Gemini:] Uma base com 20 pacientes é excelente para uma prova de conceito, mas exige um cuidado cirúrgico na hora da divisão. Em problemas de saúde e séries temporais, a forma como você corta os dados define se o seu modelo está realmente aprendendo ou apenas ``decorando'' os pacientes.
+
+    \textbf{A Armadilha do Vazamento de Dados (Data Leakage)}
+
+    O erro mais comum ao iniciar um projeto de aprendizado de máquina é pegar todas as linhas da base de dados (por exemplo, 600 dias no total) e embaralhar tudo, mandando 70\% das linhas para treino e 30\% para teste.
+
+    Se o ``Paciente 1'' tiver dias tanto no conjunto de treinamento quanto no conjunto de validação, os algoritmos (especialmente o KNN e a Rede Neural) não vão aprender a generalizar o padrão fisiológico da Covid-19. Eles vão simplesmente memorizar a frequência cardíaca basal específica do Paciente 1. Na hora da validação, a métrica de acurácia será artificialmente alta, mas o modelo falhará no mundo real quando um usuário inédito colocar o relógio.
+
+    \textbf{Abordagem 1: Divisão por Sujeito (Subject-wise Split)}
+
+    A regra de ouro neste cenário é: \textbf{a divisão deve ser feita na contagem de indivíduos, mantendo o histórico de cada paciente intacto e inseparável}. Para 20 pacientes, as proporções clássicas aplicadas na indústria ficam assim:
+
+    \begin{center}
+    \begin{tabular}{|c|c|c|p{7cm}|}
+        \hline
+        \textbf{Proporção} & \textbf{Treinamento} & \textbf{Validação / Teste} & \textbf{Contexto Ideal} \\
+        \hline
+        70/30 & 14 pacientes & 6 pacientes & Ideal se cada indivíduo possuir muitos meses ininterruptos de dados gravados. \\
+        \hline
+        80/20 & 16 pacientes & 4 pacientes & Recomendado para maximizar a extração de padrões em bases numéricas menores. \\
+        \hline
+    \end{tabular}
+    \end{center}
+
+    \textbf{Abordagem 2: Validação Cruzada (Leave-One-Subject-Out)}
+
+    Como 20 pacientes é uma amostragem relativamente pequena para treinar modelos mais complexos como a MLP, cada paciente deixado de fora do treino faz muita falta na construção das sinapses da rede. A técnica mais rigorosa e robusta para contornar isso, que agregaria um peso científico enorme ao relatório final, é o \textbf{Leave-One-Subject-Out (LOSO)}.
+
+    Nesta técnica, em vez de fazer um único corte estático, o pipeline realiza o treinamento 20 vezes sequenciais:
+
+    \begin{itemize}
+        \item Na rodada 1, o modelo treina com os dados de 19 pacientes e tenta prever os dias de infecção exclusivamente do Paciente 1.
+        \item Na rodada 2, o modelo treina com 19 pacientes (agora incluindo o Paciente 1) e tenta prever o Paciente 2.
+        \item O ciclo se repete até o Paciente 20.
+    \end{itemize}
+
+    No final, você calcula a média de acerto de todas as 20 rodadas. Isso garante que o modelo usou 100\% da base de dados para validação, sempre simulando o cenário real de ``um novo relógio pareado por um usuário completamente desconhecido''. Bibliotecas em Python como o Scikit-Learn possuem o módulo \textit{LeaveOneGroupOut} para implementar essa lógica rapidamente.
+
+    Considerando que uma base de monitoramento contínuo gera muitos dias com o rótulo ``saudável'' e apenas uma pequena janela de dias com ``infecção'', como a equipe pretende lidar com o desbalanceamento absoluto dessas classes na hora de passar esses dados para o treinamento?
 \end{description}

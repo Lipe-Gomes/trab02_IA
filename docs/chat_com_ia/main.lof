@@ -1,0 +1,5 @@
+\babel@toc {brazil}{}\relax 
+\contentsline {figure}{\numberline {1}{\ignorespaces Simulador de detecção de elevação da FCR para um paciente hipotético. Ajuste FCR Base, Elevação e Limiar (Treshold).\relax }}{9}{figure.caption.4}%
+\contentsline {figure}{\numberline {2}{\ignorespaces Detector de anomalias KNN. Ajuste de Valor de K, Desvio FCR e Tendência de elevação.\relax }}{11}{figure.caption.5}%
+\contentsline {figure}{\numberline {3}{\ignorespaces Comparação entre KNN e Árvore de Decisão. Ajuste de Desvio FCR e Variabilidade HRV.\relax }}{14}{figure.caption.6}%
+\contentsline {figure}{\numberline {4}{\ignorespaces Simulador de classificação com Rede Neural. Ajuste de quantidade de neurônios.\relax }}{16}{figure.caption.7}%

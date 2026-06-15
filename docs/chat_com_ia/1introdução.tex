@@ -376,3 +376,38 @@ Destaca-se que a LLM utilizada para a exploração do problema foi o Gemini, na 
 
     Considerando que uma base de monitoramento contínuo gera muitos dias com o rótulo ``saudável'' e apenas uma pequena janela de dias com ``infecção'', como a equipe pretende lidar com o desbalanceamento absoluto dessas classes na hora de passar esses dados para o treinamento?
 \end{description}
+
+\section{Compreensão e Exploração da Base de Dados}
+
+Para a execução deste projeto, utilizou-se uma base de dados real proveniente de um projeto de Iniciação Científica (FAPESP - 2025/27722-3), focado no monitoramento remoto de saúde via sensores embarcados. O conjunto de dados consiste no acompanhamento de pacientes ao longo de um período contínuo de monitoramento, capturando variáveis fisiológicas e comportamentais por meio de dispositivos vestíveis (\textit{wearables}). O objetivo central é a identificação de sinais fisiológicos precoces de infecções, como a COVID-19, fundamentado na análise da frequência cardíaca em repouso (\textit{Resting Heart Rate} — RHR) \cite{nature}.
+
+Para delimitação do escopo deste trabalho prático de Inteligência Artificial, foram selecionados os dados de 20 pacientes. 
+
+\subsection{Pré-processamento e a Lógica NightSignal}
+
+A partir de uma etapa de pré-processamento dos dados brutos, é ofertado como entrada ao algoritmo um arquivo de cada paciente contendo registros contínuos minuto a minuto estruturados em três colunas principais:
+\begin{itemize}
+    \item \textbf{Data/Hora (\texttt{Timestamp}):} O registro temporal com resolução de um minuto.
+    \item \textbf{Passos (\texttt{Steps}):} A contagem de passos acumulada naquele minuto.
+    \item \textbf{Batimentos (\texttt{Heart Rate}):} A frequência cardíaca bruta medida em batimentos por minuto (BPM).
+\end{itemize}
+
+
+O principal desafio técnico no uso de sensores biológicos vestíveis é o ruído provocado por atividades cotidianas, que elevam a frequência cardíaca e mascaram o estado basal do corpo. Para isolar o estresse puramente fisiológico, o algoritmo \textit{NightSignal} aplica um pipeline determinístico de preparação de dados baseado nas seguintes etapas:
+
+\begin{enumerate}
+    \item \textbf{Filtro de Repouso Absoluto Noturno:} O algoritmo restringe a análise à janela da madrugada, compreendida entre 00:00 e 07:00. Dentro desse intervalo, utiliza-se a coluna de passos para isolar apenas os minutos nos quais a contagem de movimentação seja estritamente igual a zero, garantindo que o usuário esteja em repouso absoluto, obtendo-se, consequentemente, o RHR.
+    \item \textbf{Cálculo da Média Noturna ($A_i$):} A partir dos minutos filtrados na madrugada da noite $i$, o algoritmo calcula a média aritmética de todos os batimentos válidos obtidos, gerando o valor consolidado $A_i$ para aquela noite.
+    \item \textbf{Linha de Base Histórica Dinâmica ($M_i$):} Como a frequência cardíaca basal varia entre indivíduos, o sistema calcula uma linha de base (\textit{baseline}) móvel adaptativa. Para uma noite $i$, a linha de base $M_i$ é definida como a mediana de todas as médias noturnas ($A_1, A_2, \dots, A_i$) acumuladas pelo paciente desde o início do seu monitoramento até a data analisada.
+\end{enumerate}
+
+\subsection{Sinalização de Alertas e Escopo do Modelo de IA}
+
+Após o cálculo das métricas dinâmicas, o algoritmo avalia o desvio do dia corrente em relação ao histórico do paciente por meio de uma Máquina de Estados Finitos (FSM). A execução do \textit{NightSignal} gera como saída um arquivo estruturado que mapeia cada data do monitoramento a um rótulo numérico categórico de três classes:
+\begin{itemize}
+    \item \textbf{Classe 0 (Alerta Verde):} Indica normalidade fisiológica, onde o desvio $A_i$ se mantém abaixo de $M_i + 3$ bpm.
+    \item \textbf{Classe 1 (Alerta Amarelo):} Sinaliza uma elevação moderada isolada na frequência cardíaca ($M_i + 3$ bpm).
+    \item \textbf{Classe 2 (Alerta Vermelho):} Indica uma anomalia crítica sustentada, disparada quando o desvio atinge ou ultrapassa o limiar de $\geq M_i + 4$ bpm por pelo menos duas noites consecutivas.
+\end{itemize}
+
+Para o desenvolvimento do modelo de Inteligência Artificial desta disciplina, o escopo foi restrito exclusivamente à predição e classificação dos \textbf{Alertas Vermelhos (Classe 2)}. Dessa forma, o problema de IA é modelado como uma tarefa de classificação binária (Alerta Vermelho \textit{versus} Não-Vermelho) com o objetivo de prever o limiar crítico de degradação da saúde do paciente.
